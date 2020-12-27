@@ -13,9 +13,6 @@ download_data() {
     # download puzzles
     wget https://database.lichess.org/lichess_db_puzzle.csv.bz2
     mv lichess_db_puzzle.csv.bz2 data/
-
-    # decompress puzzles
-    bzip2 -d data/lichess_db_puzzle.csv.bz2
 }
 
 
@@ -32,7 +29,12 @@ done
 
 
 # download data if it isn't already
-if ! [ -e data/lichess_db_puzzle.csv ] ;
+if ! [ -e data/lichess_db_puzzle.csv.bz2 ] ;
 then
     download_data
 fi
+
+
+# decompress puzzles
+bzip2 -kd data/lichess_db_puzzle.csv.bz2
+

@@ -12,9 +12,7 @@ MAX_LEN = 15 # pad input to 17 * (2 * MAX_LEN + 2)
 
 def main():
     assert_data_downloaded()
-    vecs, ratings = zip(*all_puzzles_to_data())
-    # TODO: use mmap to save vecs
-    breakpoint()
+    all_puzzles_to_data()
 
 
 # count puzzles, https://stackoverflow.com/a/27518377/4142985
@@ -24,13 +22,26 @@ def rawincount(filename):
     return sum( buf.count(b'\n') for buf in bufgen )
 
 def all_puzzles_to_data():
+    # get mmap file
+    num_puzzles = rawincount(DATA_FILE)
+    puzzles_file, ratings_file = get_mmap_files(num_puzzles)
+
+    # write to mmap
     with open(DATA_FILE) as csvfile:
         reader = csv.reader(csvfile)
-        for puzzle in reader:
-            vec, rating = puzzle_to_data(puzzle)
-            mmapped_vec[i] = vec
-            mmapped_rating[i] = rating
-        return list(filter(lambda x: x, vecs))
+        for i, (vec, rating) in enumerate(filter(lambda x: x, map(puzzle_to_data, reader))):
+            puzzles_file[i] = vec
+            ratings_file[i] = rating
+
+    # save mmap
+    del puzzles_file, ratings_file
+
+def get_mmap_files(num_puzzles):
+    puzzle_shape = (num_puzzles, 17 * (2 * MAX_LEN + 2), 8, 8)
+    rating_shape = (num_puzzles, 2)
+    puzzles_file = np.memmap("data/puzzles.dat", dtype = np.int8, mode = 'write', shape = puzzle_shape)
+    ratings_file = np.memmap("data/ratings.dat", dtype = np.float32, mode = 'write', shape = rating_shape)
+    return puzzles_file, ratings_file
 
 
 def puzzle_to_data(puzzle):
