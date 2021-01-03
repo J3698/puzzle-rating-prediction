@@ -21,10 +21,19 @@ def rawincount(filename):
     bufgen = takewhile(lambda x: x, (f.raw.read(1024*1024) for _ in repeat(None)))
     return sum( buf.count(b'\n') for buf in bufgen )
 
+
 def all_puzzles_to_data():
     # get mmap file
     num_puzzles = rawincount(DATA_FILE)
     puzzles_file, ratings_file = get_mmap_files(num_puzzles)
+
+
+    # store mmap shapes
+    with open("data/shapes.csv", 'w') as shapesfile:
+        writer = csv.writer(shapesfile)
+        writer.writerow(["data/puzzles.dat", str(puzzles_file.shape)])
+        writer.writerow(["data/puzzles.dat", str(ratings_file.shape)])
+
 
     # write to mmap
     with open(DATA_FILE) as csvfile:
