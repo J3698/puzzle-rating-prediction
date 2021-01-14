@@ -21,16 +21,10 @@ class BasicChessCNN(nn.Module):
             nn.Conv2d(1024, 1024, 3, 1, 1),
             nn.BatchNorm2d(1024),
             nn.ReLU(),
-            nn.Conv2d(1024, 1024, 3, 1, 1),
-            nn.BatchNorm2d(1024),
-            nn.ReLU(),
             nn.Conv2d(1024, 2048, 3, 2, 1), # out: 2x2x2048
             nn.BatchNorm2d(2048),
             nn.ReLU(),
 
-            nn.Conv2d(2048, 2048, 3, 1, 1),
-            nn.BatchNorm2d(2048),
-            nn.ReLU(),
             nn.Conv2d(2048, 2048, 3, 1, 1),
             nn.BatchNorm2d(2048),
             nn.ReLU(),

@@ -14,6 +14,7 @@ def get_train_val_test_indices(datapoints):
 
     train, val, test = np.split(indices, (train_points, train_points + val_points))
     assert (len(train), len(val), len(test)) == (train_points, val_points, test_points)
+    print(len(train), len(val), len(test))
 
     return train, val, test
 
@@ -39,7 +40,7 @@ ratings = np.memmap("./data/ratings.dat", mode="r", dtype=np.float32, shape=(797
 
 datapoints = 797589
 train_indices, val_indices, test_indices = get_train_val_test_indices(datapoints)
-
+raise 23
 create_training_partition(train_indices, puzzles, ratings, "./data/puzzles_train.dat", "./data/ratings_train.dat")
 create_training_partition(val_indices, puzzles, ratings, "./data/puzzles_val.dat", "./data/ratings_val.dat")
 create_training_partition(test_indices, puzzles, ratings, "./data/puzzles_test.dat", "./data/ratings_test.dat")
