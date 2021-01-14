@@ -14,23 +14,30 @@ from models import *
 from dataset import get_dataloaders
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-TRUNCATION = 3
+TRUNCATION = inf
 MAX_EPOCHS = 45
-EARLY_STOP = 5
+BATCH_SIZE = 1024
+EARLY_STOP = 15
+PROFILE = True
 
 
 
 
 def main():
-    train_dataloader, val_dataloader, _ = get_dataloaders(truncation = TRUNCATION)
-    model = BasicChessCNN().to(DEVICE)
+    train_dataloader, val_dataloader, _ = get_dataloaders(BATCH_SIZE, truncation = TRUNCATION)
+    model = BasicChessCNN2().to(DEVICE)
     optimizer = optim.AdamW(model.parameters(), lr = 1e-3)
     scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience = 5, factor = 0.3)
 
     best_val_loss = inf
     counter = 0
+
+    # save_model(model, optimizer, scheduler, inf, 0)
     for i in range(MAX_EPOCHS):
         train_loss, train_correct = train(model, train_dataloader, optimizer, scheduler)
+        if PROFILE:
+            break
+
         val_loss, val_correct = evaluate(model, val_dataloader)
         print(f"EPOCH {i + 1} finished")
         print(f"TRAIN LOSS {train_loss:.3f}, VAL LOSS {val_loss:.3f}")
@@ -89,7 +96,7 @@ def train(model, train_dataloader, optimizer, scheduler):
     losses = []
     correct = 0
     total = 0
-    for (x, y) in tqdm.tqdm(train_dataloader):
+    for i, (x, y) in tqdm.tqdm(enumerate(train_dataloader)):
         optimizer.zero_grad()
 
         x, y = x.to(DEVICE), y.to(DEVICE)
@@ -106,6 +113,8 @@ def train(model, train_dataloader, optimizer, scheduler):
         torch.nn.utils.clip_grad_norm_(model.parameters(), 5)
         optimizer.step()
         scheduler.step(loss_reduced)
+        if i == 10 and PROFILE:
+            break
 
     return np.mean(losses), correct / total
 
@@ -116,6 +125,7 @@ def evaluate(model, eval_dataloader):
     with torch.no_grad():
         losses = []
         for (x, y) in tqdm.tqdm(eval_dataloader):
+            x, y = x.to(DEVICE), y.to(DEVICE)
             out = model(x)
             loss = scaled_l2_loss(out, y, reduction = 'none')
             correct += (loss < 1).sum()

@@ -3,8 +3,8 @@
 import numpy as np
 
 
-
 def get_train_val_test_indices(datapoints):
+    np.random.seed(0)
     indices = np.arange(datapoints)
     np.random.shuffle(indices)
 
@@ -40,7 +40,6 @@ ratings = np.memmap("./data/ratings.dat", mode="r", dtype=np.float32, shape=(797
 
 datapoints = 797589
 train_indices, val_indices, test_indices = get_train_val_test_indices(datapoints)
-raise 23
 create_training_partition(train_indices, puzzles, ratings, "./data/puzzles_train.dat", "./data/ratings_train.dat")
 create_training_partition(val_indices, puzzles, ratings, "./data/puzzles_val.dat", "./data/ratings_val.dat")
 create_training_partition(test_indices, puzzles, ratings, "./data/puzzles_test.dat", "./data/ratings_test.dat")

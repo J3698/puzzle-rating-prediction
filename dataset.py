@@ -13,8 +13,8 @@ class PuzzleDataset(Dataset):
         return min(len(self.puzzles), self.truncation)
 
     def __getitem__(self, idx):
-        return torch.tensor(self.puzzles[idx].copy(), dtype=torch.float32),\
-               torch.tensor(self.ratings[idx].copy(), dtype=torch.float32)
+        return torch.tensor(self.puzzles[idx], dtype=torch.float32),\
+               torch.tensor(self.ratings[idx], dtype=torch.float32)
 
 def get_datasets(truncation = inf):
     train_dataset = PuzzleDataset("./data/puzzles_train.dat", "./data/ratings_train.dat",
@@ -27,13 +27,13 @@ def get_datasets(truncation = inf):
     return train_dataset, val_dataset, test_dataset
 
 
-def get_dataloaders(truncation = inf):
+def get_dataloaders(batch_size, truncation = inf):
     train_dataset, val_dataset, test_dataset = get_datasets(truncation = truncation)
     print(f"Loaded datasets: {len(train_dataset)} train, "
            f"{len(val_dataset)} val, {len(test_dataset)} test")
 
-    train_dataloader = DataLoader(train_dataset, batch_size = 64, shuffle = True)
-    val_dataloader = DataLoader(val_dataset, batch_size = 64, shuffle = False)
-    test_dataloader = DataLoader(test_dataset, batch_size = 64, shuffle = False)
+    train_dataloader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
+    val_dataloader = DataLoader(val_dataset, batch_size = batch_size, shuffle = False)
+    test_dataloader = DataLoader(test_dataset, batch_size = batch_size, shuffle = False)
 
     return train_dataloader, val_dataloader, test_dataloader
