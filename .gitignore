@@ -3,3 +3,4 @@ __pycache__/
 *.swp
 *.swo
 data/lichess_db_puzzle.csv
+models/
