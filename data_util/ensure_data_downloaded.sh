@@ -37,6 +37,9 @@ fi
 
 
 # decompress puzzles
-rm data/lichess_db_puzzle.csv
+if [ -f data/lichess_db_puzzle.csv ]; then
+    rm data/lichess_db_puzzle.csv
+fi 
+
 bzip2 -kd data/lichess_db_puzzle.csv.bz2
 

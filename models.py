@@ -11,9 +11,6 @@ class BasicChessCNN(nn.Module):
             nn.Conv2d(544, 544, 3, 1, 1),
             nn.BatchNorm2d(544),
             nn.ReLU(),
-            nn.Conv2d(544, 544, 3, 1, 1),
-            nn.BatchNorm2d(544),
-            nn.ReLU(),
             nn.Conv2d(544, 1024, 3, 2, 1),  # out: 4x4x1024
             nn.BatchNorm2d(1024),
             nn.ReLU(),
@@ -35,4 +32,47 @@ class BasicChessCNN(nn.Module):
 
     def forward(self, x):
         return self.layers(x)
+
+class BasicChessCNN2(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.layers = nn.Sequential(
+            nn.Conv2d(544, 544, 3, 1, 1),
+            nn.BatchNorm2d(544),
+            nn.ReLU(),
+            nn.Conv2d(544, 544, 3, 1, 1),
+            nn.BatchNorm2d(544),
+            nn.ReLU(),
+            nn.Conv2d(544, 544, 3, 1, 1),
+            nn.BatchNorm2d(544),
+            nn.ReLU(),
+            nn.Conv2d(544, 1024, 3, 2, 1),  # out: 4x4x1024
+            nn.BatchNorm2d(1024),
+            nn.ReLU(),
+
+            nn.Conv2d(1024, 2048, 3, 2, 1), # out: 2x2x2048
+            nn.BatchNorm2d(2048),
+            nn.ReLU(),
+
+            nn.Conv2d(2048, 2048, 3, 1, 1),
+            nn.BatchNorm2d(2048),
+            nn.ReLU(),
+            PrintShape(),
+            nn.MaxPool2d(2, 2),
+            PrintShape(),
+            nn.Flatten(),                   # out: 4096
+            nn.Linear(2048, 1)
+        )
+
+    def forward(self, x):
+        return self.layers(x)
+
+class PrintShape(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        #print(x.shape)
+        return x
 
