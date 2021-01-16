@@ -13,8 +13,8 @@ class PuzzleDataset(Dataset):
         return min(len(self.puzzles), self.truncation)
 
     def __getitem__(self, idx):
-        return torch.tensor(self.puzzles[idx], dtype=torch.float32),\
-               torch.tensor(self.ratings[idx], dtype=torch.float32)
+        return torch.tensor(self.puzzles[idx].copy(), dtype=torch.float32),\
+               torch.tensor(self.ratings[idx].copy(), dtype=torch.float32)
 
 def get_datasets(truncation = inf):
     train_dataset = PuzzleDataset("./data/puzzles_train.dat", "./data/ratings_train.dat",

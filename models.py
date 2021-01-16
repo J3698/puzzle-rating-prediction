@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 import torch.nn as nn
 
 
@@ -75,4 +76,47 @@ class PrintShape(nn.Module):
     def forward(self, x):
         #print(x.shape)
         return x
+
+class AlphaGoModel1(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.first_conv = nn.Sequential(
+            nn.Conv2d(544, 256, 3, 1, 1),
+            nn.BatchNorm2d(256),
+            nn.ReLU()
+        )
+
+        self.resblocks = nn.Sequential(*(ResBlock1() for i in range(19)))
+
+        self.head = nn.Sequential(
+            nn.Conv2d(256, 2, 1, 1),
+            nn.BatchNorm2d(2),
+            nn.ReLU(),
+            nn.Flatten(),
+            nn.Linear(128, 1))
+
+        # conv 2 k 1 s 1
+        # bn
+        # rlu
+        # fc
+
+    def forward(self, x):
+        return self.head(self.resblocks(self.first_conv(x)))
+
+
+class ResBlock1(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.conv1 = nn.Conv2d(256, 256, 3, 1, 1)
+        self.bn1 = nn.BatchNorm2d(256)
+        self.conv2 = nn.Conv2d(256, 256, 3, 1, 1)
+        self.bn2 = nn.BatchNorm2d(256)
+
+    def forward(self, x):
+        first_conv = F.relu(self.bn1(self.conv1(x)))
+        return F.relu(self.bn2(self.conv1(first_conv)) + x)
+
+
 

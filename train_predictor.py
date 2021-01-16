@@ -14,7 +14,7 @@ from models import *
 from dataset import get_dataloaders
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-TRUNCATION = inf
+TRUNCATION = 1
 MAX_EPOCHS = 45
 BATCH_SIZE = 1024
 EARLY_STOP = 15
@@ -25,7 +25,7 @@ PROFILE = True
 
 def main():
     train_dataloader, val_dataloader, _ = get_dataloaders(BATCH_SIZE, truncation = TRUNCATION)
-    model = BasicChessCNN2().to(DEVICE)
+    model = AlphaGoModel1().to(DEVICE)
     optimizer = optim.AdamW(model.parameters(), lr = 1e-3)
     scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience = 5, factor = 0.3)
 
