@@ -116,7 +116,7 @@ class ResBlock1(nn.Module):
 
     def forward(self, x):
         first_conv = F.relu(self.bn1(self.conv1(x)))
-        return F.relu(self.bn2(self.conv1(first_conv)) + x)
+        return F.relu(self.bn2(self.conv2(first_conv)) + x)
 
 
 

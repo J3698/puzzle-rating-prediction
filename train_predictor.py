@@ -14,11 +14,11 @@ from models import *
 from dataset import get_dataloaders
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-TRUNCATION = 1
+TRUNCATION = inf if torch.cuda.is_available() else 4
 MAX_EPOCHS = 45
-BATCH_SIZE = 1024
+BATCH_SIZE = 1024 if torch.cuda.is_available() else 1
 EARLY_STOP = 15
-PROFILE = True
+PROFILE = False
 
 
 
@@ -32,7 +32,7 @@ def main():
     best_val_loss = inf
     counter = 0
 
-    # save_model(model, optimizer, scheduler, inf, 0)
+    save_model(model, optimizer, scheduler, inf, 0)
     for i in range(MAX_EPOCHS):
         train_loss, train_correct = train(model, train_dataloader, optimizer, scheduler)
         if PROFILE:
@@ -93,10 +93,11 @@ def scaled_l2_loss(actual, desired, reduction = 'mean'):
 
 
 def train(model, train_dataloader, optimizer, scheduler):
+    losses_temp = 0
     losses = []
     correct = 0
     total = 0
-    for i, (x, y) in tqdm.tqdm(enumerate(train_dataloader)):
+    for i, (x, y) in enumerate(tqdm.tqdm(train_dataloader)):
         optimizer.zero_grad()
 
         x, y = x.to(DEVICE), y.to(DEVICE)
@@ -107,13 +108,21 @@ def train(model, train_dataloader, optimizer, scheduler):
         correct += (loss < 1).sum()
         total += len(x)
         losses.append(loss_reduced.item())
+        losses_temp += loss_reduced.item()
 
         loss_reduced.backward()
 
         torch.nn.utils.clip_grad_norm_(model.parameters(), 5)
         optimizer.step()
         scheduler.step(loss_reduced)
-        if i == 10 and PROFILE:
+
+        if i % 60 == 0:
+            if i != 0:
+                print(f"{losses_temp / 60:.3f}")
+            losses_temp = 0
+
+
+        if i == 20 and PROFILE:
             break
 
     return np.mean(losses), correct / total
