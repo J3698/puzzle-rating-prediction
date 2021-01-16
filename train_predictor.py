@@ -16,7 +16,7 @@ from dataset import get_dataloaders
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 TRUNCATION = inf if torch.cuda.is_available() else 4
 MAX_EPOCHS = 45
-BATCH_SIZE = 1024 if torch.cuda.is_available() else 1
+BATCH_SIZE = 1024 if torch.cuda.is_available() else 2
 EARLY_STOP = 15
 PROFILE = False
 
@@ -25,7 +25,7 @@ PROFILE = False
 
 def main():
     train_dataloader, val_dataloader, _ = get_dataloaders(BATCH_SIZE, truncation = TRUNCATION)
-    model = AlphaGoModel1().to(DEVICE)
+    model = BasicChessCNN2().to(DEVICE)
     optimizer = optim.AdamW(model.parameters(), lr = 1e-3)
     scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience = 5, factor = 0.3)
 
@@ -97,6 +97,7 @@ def train(model, train_dataloader, optimizer, scheduler):
     losses = []
     correct = 0
     total = 0
+    model.train()
     for i, (x, y) in enumerate(tqdm.tqdm(train_dataloader)):
         optimizer.zero_grad()
 
@@ -131,6 +132,7 @@ def train(model, train_dataloader, optimizer, scheduler):
 def evaluate(model, eval_dataloader):
     correct = 0
     total = 0
+    model.eval()
     with torch.no_grad():
         losses = []
         for (x, y) in tqdm.tqdm(eval_dataloader):
