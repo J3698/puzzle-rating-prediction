@@ -14,9 +14,9 @@ from models import *
 from dataset import get_dataloaders
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-TRUNCATION = inf if torch.cuda.is_available() else 4
+TRUNCATION = inf if torch.cuda.is_available() else 3
 MAX_EPOCHS = 45
-BATCH_SIZE = 1024 if torch.cuda.is_available() else 2
+BATCH_SIZE = 1024 if torch.cuda.is_available() else 3
 EARLY_STOP = 15
 PROFILE = False
 
@@ -25,8 +25,8 @@ PROFILE = False
 
 def main():
     train_dataloader, val_dataloader, _ = get_dataloaders(BATCH_SIZE, truncation = TRUNCATION)
-    model = BasicChessCNN2().to(DEVICE)
-    optimizer = optim.AdamW(model.parameters(), lr = 1e-3)
+    model = AlphaGoModel1().to(DEVICE)
+    optimizer = optim.AdamW(model.parameters(), lr = 0.1)
     scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience = 5, factor = 0.3)
 
     best_val_loss = inf
@@ -79,14 +79,18 @@ def scaled_l2_loss(actual, desired, reduction = 'mean'):
     batch, _ = actual.shape
     assert actual.shape == (batch, 1), actual.shape
     assert desired.shape == (batch, 2), desired.shape
+    print("d", desired[:, 0].detach().numpy().tolist())
+    print("a", actual.detach().numpy().tolist())
 
     std_dev = desired[:, 1, None]
     assert std_dev.shape == (batch, 1), std_dev.shape
 
     scaled_actual = actual / std_dev
+    #print("sa", scaled_actual)
     assert scaled_actual.shape == (batch, 1), scaled_actual.shape
 
     scaled_desired = desired[:, 0, None] / std_dev
+    #print("sd", scaled_desired)
     assert scaled_desired.shape == (batch, 1), scaled_desired.shape
 
     return F.mse_loss(scaled_actual, scaled_desired, reduction = reduction)
@@ -105,6 +109,7 @@ def train(model, train_dataloader, optimizer, scheduler):
         out = model(x)
 
         loss = scaled_l2_loss(out, y, reduction = 'none')
+        #print("l", loss)
         loss_reduced = loss.mean()
         correct += (loss < 1).sum()
         total += len(x)
