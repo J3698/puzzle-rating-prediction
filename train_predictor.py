@@ -14,10 +14,11 @@ from models import *
 from dataset import get_dataloaders
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-TRUNCATION = inf if torch.cuda.is_available() else 3
-MAX_EPOCHS = 45
+TRUNCATION = inf if torch.cuda.is_available() else 20
+MAX_EPOCHS = 100
 BATCH_SIZE = 1024 if torch.cuda.is_available() else 3
-EARLY_STOP = 15
+EARLY_STOP = 15 if torch.cuda.is_available() else inf
+LR = 0.1 if torch.cuda.is_available() else 1
 PROFILE = False
 
 
@@ -26,8 +27,8 @@ PROFILE = False
 def main():
     train_dataloader, val_dataloader, _ = get_dataloaders(BATCH_SIZE, truncation = TRUNCATION)
     model = AlphaGoModel1().to(DEVICE)
-    optimizer = optim.AdamW(model.parameters(), lr = 0.1)
-    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience = 5, factor = 0.3)
+    optimizer = optim.AdamW(model.parameters(), lr = 1)
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience = 3, factor = 0.3, verbose = True)
 
     best_val_loss = inf
     counter = 0
@@ -39,6 +40,8 @@ def main():
             break
 
         val_loss, val_correct = evaluate(model, val_dataloader)
+        scheduler.step(val_loss if torch.cuda.is_available() else train_loss)
+
         print(f"EPOCH {i + 1} finished")
         print(f"TRAIN LOSS {train_loss:.3f}, VAL LOSS {val_loss:.3f}")
         print(f"TRAIN CORRECT {train_correct:.3f}, VAL CORRECT {val_correct:.3f}")
@@ -130,7 +133,6 @@ def train(model, train_dataloader, optimizer, scheduler):
 
         torch.nn.utils.clip_grad_norm_(model.parameters(), 5)
         optimizer.step()
-        scheduler.step(loss_reduced)
 
         if i % 60 == 0:
             if i != 0:
