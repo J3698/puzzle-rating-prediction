@@ -27,13 +27,16 @@ def get_datasets(truncation = inf):
     return train_dataset, val_dataset, test_dataset
 
 
-def get_dataloaders(batch_size, truncation = inf):
+def get_dataloaders(batch_size, num_workers, truncation = inf):
     train_dataset, val_dataset, test_dataset = get_datasets(truncation = truncation)
     print(f"Loaded datasets: {len(train_dataset)} train, "
            f"{len(val_dataset)} val, {len(test_dataset)} test")
 
-    train_dataloader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
-    val_dataloader = DataLoader(val_dataset, batch_size = batch_size, shuffle = False)
-    test_dataloader = DataLoader(test_dataset, batch_size = batch_size, shuffle = False)
+    train_dataloader = DataLoader(train_dataset, batch_size = batch_size,
+                                  num_workers = num_workers, shuffle = True)
+    val_dataloader = DataLoader(val_dataset, batch_size = batch_size,
+                                num_workers = num_workers, shuffle = False)
+    test_dataloader = DataLoader(test_dataset, batch_size = batch_size,
+                                 num_workers = num_workers, shuffle = False)
 
     return train_dataloader, val_dataloader, test_dataloader

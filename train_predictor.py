@@ -25,15 +25,19 @@ PROFILE = False
 
 
 def main():
-    train_dataloader, val_dataloader, _ = get_dataloaders(BATCH_SIZE, truncation = TRUNCATION)
+    train_dataloader, val_dataloader, _ = get_dataloaders(BATCH_SIZE, 8, truncation = TRUNCATION)
     model = AlphaGoModel1().to(DEVICE)
-    optimizer = optim.AdamW(model.parameters(), lr = 1)
+    optimizer = optim.AdamW(model.parameters(), lr = LR)
     scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience = 3, factor = 0.3, verbose = True)
+
+    model = load_model(AlphaGoModel1, "models/AlphaGoModel1.pt", optimizer, scheduler).to(DEVICE)
+    optimizer = optim.AdamW(model.parameters(), lr = 1e-3, weight_decay = 1e-5)
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience = 2, verbose = True)
 
     best_val_loss = inf
     counter = 0
 
-    save_model(model, optimizer, scheduler, inf, 0)
+    #save_model(model, optimizer, scheduler, inf, 0)
     for i in range(MAX_EPOCHS):
         train_loss, train_correct = train(model, train_dataloader, optimizer, scheduler)
         if PROFILE:
@@ -49,7 +53,7 @@ def main():
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             counter = 0
-            save_model(model, optimizer, scheduler, val_loss, i + 1)
+            #save_model(model, optimizer, scheduler, val_loss, i + 1)
         else:
             counter += 1
             print("No improvement")
@@ -73,15 +77,17 @@ def save_model(model, optimizer, scheduler, val_loss, epoch):
                 'val_loss': val_loss
     }, path)
 
-def load_model(model_cls, path, optimizer, scheduler, val_loss):
+def load_model(model_cls, path, optimizer, scheduler):
     checkpoint = torch.load(path)
     model = model_cls()
     model.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     epoch = checkpoint['epoch']
-    loss = checkpoint['loss']
+    loss = checkpoint['val_loss']
     print(f"Epoch: {epoch}")
     print(f"Loss: {loss}")
+
+    return model
 
 
 def scaled_l2_loss(actual, desired, reduction = 'mean'):
