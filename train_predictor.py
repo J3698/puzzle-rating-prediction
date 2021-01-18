@@ -70,6 +70,16 @@ def save_model(model, optimizer, scheduler, val_loss, epoch):
                 'val_loss': val_loss
     }, path)
 
+def load_model(model_cls, path, optimizer, scheduler, val_loss):
+    checkpoint = torch.load(path)
+    model = model_cls()
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    epoch = checkpoint['epoch']
+    loss = checkpoint['loss']
+    print(f"Epoch: {epoch}")
+    print(f"Loss: {loss}")
+
 
 def scaled_l2_loss(actual, desired, reduction = 'mean'):
     """
@@ -79,8 +89,8 @@ def scaled_l2_loss(actual, desired, reduction = 'mean'):
     batch, _ = actual.shape
     assert actual.shape == (batch, 1), actual.shape
     assert desired.shape == (batch, 2), desired.shape
-    print("d", desired[:, 0].detach().numpy().tolist())
-    print("a", actual.detach().numpy().tolist())
+    #print("d", desired[:, 0].detach().numpy().tolist())
+    #print("a", actual.detach().numpy().tolist())
 
     std_dev = desired[:, 1, None]
     assert std_dev.shape == (batch, 1), std_dev.shape
