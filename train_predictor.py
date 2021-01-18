@@ -28,7 +28,7 @@ def main():
     train_dataloader, val_dataloader, _ = get_dataloaders(BATCH_SIZE, truncation = TRUNCATION)
     model = AlphaGoModel1().to(DEVICE)
     optimizer = optim.AdamW(model.parameters(), lr = 1)
-    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience = 5, factor = 0.3, verbose = True)
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience = 3, factor = 0.3, verbose = True)
 
     best_val_loss = inf
     counter = 0
