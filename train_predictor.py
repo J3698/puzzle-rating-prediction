@@ -12,6 +12,14 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from models import *
 from dataset import get_dataloaders
+import neptune
+
+
+neptune.init(project_qualified_name='j3698/chess',
+                     api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiOGNlMTdiYWMtN2YwMS00OTNmLWI3MzAtMjFmMWUxNmM3ZjQyIn0=',
+                                  )
+neptune.create_experiment()
+
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 TRUNCATION = inf if torch.cuda.is_available() else 20
@@ -26,18 +34,17 @@ PROFILE = False
 
 def main():
     train_dataloader, val_dataloader, _ = get_dataloaders(BATCH_SIZE, 8, truncation = TRUNCATION)
-    model = AlphaGoModel1().to(DEVICE)
-    optimizer = optim.AdamW(model.parameters(), lr = LR)
-    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience = 3, factor = 0.3, verbose = True)
+    model = AlphaGoModel2().to(DEVICE)
 
-    model = load_model(AlphaGoModel1, "models/AlphaGoModel1.pt", optimizer, scheduler).to(DEVICE)
-    optimizer = optim.AdamW(model.parameters(), lr = 1e-3, weight_decay = 1e-5)
-    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience = 2, verbose = True)
+    optimizer = optim.AdamW(model.parameters(), lr = LR, weight_decay = 5e-4)
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience = 1, factor = .1, verbose = True)
 
     best_val_loss = inf
     counter = 0
 
-    #save_model(model, optimizer, scheduler, inf, 0)
+    neptune.log_text('model', repr(model))
+
+    save_model(model, optimizer, scheduler, inf, 0)
     for i in range(MAX_EPOCHS):
         train_loss, train_correct = train(model, train_dataloader, optimizer, scheduler)
         if PROFILE:
@@ -49,16 +56,24 @@ def main():
         print(f"EPOCH {i + 1} finished")
         print(f"TRAIN LOSS {train_loss:.3f}, VAL LOSS {val_loss:.3f}")
         print(f"TRAIN CORRECT {train_correct:.3f}, VAL CORRECT {val_correct:.3f}")
+        neptune.log_metric('epoch', i + 1)
+        neptune.log_metric('train_loss', train_loss)
+        neptune.log_metric('val_loss', val_loss)
+        neptune.log_metric('train_correct', train_correct)
+        neptune.log_metric('val_correct', val_correct)
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             counter = 0
-            #save_model(model, optimizer, scheduler, val_loss, i + 1)
+            save_model(model, optimizer, scheduler, val_loss, i + 1)
+            neptune.log_text('improvement', 'yes')
         else:
+            neptune.log_text('improvement', 'no')
             counter += 1
             print("No improvement")
             if counter == EARLY_STOP:
                 print("Stopping early")
+                neptune.log_text('improvement', 'stopping')
                 break
 
         print()
@@ -69,6 +84,7 @@ def main():
 def save_model(model, optimizer, scheduler, val_loss, epoch):
     path = f"models/{type(model).__name__}.pt"
     print(f"Saving model as {path}")
+    neptune.log_metric('saved_epochs', epoch + 1)
     torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
@@ -122,6 +138,7 @@ def train(model, train_dataloader, optimizer, scheduler):
     total = 0
     model.train()
     for i, (x, y) in enumerate(tqdm.tqdm(train_dataloader)):
+        neptune.log_metric('batch_num', i)
         optimizer.zero_grad()
 
         x, y = x.to(DEVICE), y.to(DEVICE)
@@ -133,6 +150,7 @@ def train(model, train_dataloader, optimizer, scheduler):
         correct += (loss < 1).sum()
         total += len(x)
         losses.append(loss_reduced.item())
+        neptune.log_metric('train_loss_1', loss_reduced.item())
         losses_temp += loss_reduced.item()
 
         loss_reduced.backward()
@@ -143,6 +161,7 @@ def train(model, train_dataloader, optimizer, scheduler):
         if i % 60 == 0:
             if i != 0:
                 print(f"{losses_temp / 60:.3f}")
+                neptune.log_metric('train_loss_60', losses_temp / 60)
             losses_temp = 0
 
 
