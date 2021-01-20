@@ -13,6 +13,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 from models import *
 from dataset import get_dataloaders
 import neptune
+import os
 
 
 neptune.init(project_qualified_name='j3698/chess',
@@ -25,19 +26,19 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 TRUNCATION = inf if torch.cuda.is_available() else 20
 MAX_EPOCHS = 100
 BATCH_SIZE = 1024 if torch.cuda.is_available() else 3
-EARLY_STOP = 15 if torch.cuda.is_available() else inf
+EARLY_STOP = 5 if torch.cuda.is_available() else inf
 LR = 0.1 if torch.cuda.is_available() else 1
 PROFILE = False
 
 
-
+ID = "2"
 
 def main():
     train_dataloader, val_dataloader, _ = get_dataloaders(BATCH_SIZE, 8, truncation = TRUNCATION)
     model = AlphaGoModel2().to(DEVICE)
 
     optimizer = optim.AdamW(model.parameters(), lr = LR, weight_decay = 5e-4)
-    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience = 1, factor = .1, verbose = True)
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience = 2, factor = .1, verbose = True)
 
     best_val_loss = inf
     counter = 0
@@ -82,9 +83,13 @@ def main():
 
 
 def save_model(model, optimizer, scheduler, val_loss, epoch):
-    path = f"models/{type(model).__name__}.pt"
+    path = f"models/{type(model).__name__}-{ID}.pt"
     print(f"Saving model as {path}")
     neptune.log_metric('saved_epochs', epoch + 1)
+
+    if os.path.exists(path):
+        raise Exception("Model exists!")
+
     torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
