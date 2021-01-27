@@ -16,9 +16,7 @@ import neptune
 import os
 
 
-neptune.init(project_qualified_name='j3698/chess',
-                     api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiOGNlMTdiYWMtN2YwMS00OTNmLWI3MzAtMjFmMWUxNmM3ZjQyIn0=',
-                                  )
+neptune.init(project_qualified_name='j3698/chess')
 neptune.create_experiment()
 
 
