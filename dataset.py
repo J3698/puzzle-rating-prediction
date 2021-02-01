@@ -40,3 +40,14 @@ def get_dataloaders(batch_size, num_workers, truncation = inf):
                                  num_workers = num_workers, shuffle = False)
 
     return train_dataloader, val_dataloader, test_dataloader
+
+def main():
+    train, _, _ = get_dataloaders(1024, 4)
+    total = 0
+    for x, y in train:
+        total += (y[:, 1] == 500).sum()
+    print(total)
+
+
+if __name__ == "__main__":
+    main()

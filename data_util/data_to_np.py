@@ -1,30 +1,38 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import pandas as pd
 import os
 import csv
 from chess import Board, Move
 from fen_to_vec import fenToVec
+import matplotlib.pyplot as plt
 from itertools import takewhile, repeat
 
-DATA_FILE = "data/lichess_db_puzzle.csv"
-MAX_LEN = 15 # pad input to 17 * (2 * MAX_LEN + 2)
+DATA_FILE = "data/raw_data.csv"
+MAX_PUZZLE_LEN = 15 # pad input to 17 * (2 * MAX_LEN + 2)
+
 
 def main():
     assert_data_downloaded()
     all_puzzles_to_data()
 
 
-# count puzzles, https://stackoverflow.com/a/27518377/4142985
-def rawincount(filename):
-    f = open(filename, 'rb')
-    bufgen = takewhile(lambda x: x, (f.raw.read(1024*1024) for _ in repeat(None)))
-    return sum( buf.count(b'\n') for buf in bufgen )
+def read_data():
+    names = ["PuzzleId", "FEN", "Moves", "Rating", "RatingDeviation", \
+             "Popularity", "NbPlays", "Themes", "GameUrl"]
+    return pd.read_csv(DATA_FILE, names = names)
 
 
 def all_puzzles_to_data():
     # get mmap file
-    num_puzzles = rawincount(DATA_FILE)
+    data = read_data()
+    hist_cols = ["NbPlays", "RatingDeviation"]
+    h = data[data["NbPlays"] > 20].hist(column = hist_cols, bins = 100)
+    print(len(data[data["NbPlays"] > 20]))
+    plt.show()
+    data = remove_puzzles_with_large_uncertainty(data)
+    num_puzzles = count_puzzles_with_valid_deviation(reader)
     puzzles_file, ratings_file = get_mmap_files(num_puzzles)
 
 
@@ -37,13 +45,14 @@ def all_puzzles_to_data():
 
     # write to mmap
     with open(DATA_FILE) as csvfile:
-        reader = csv.reader(csvfile)
-        for i, (vec, rating) in enumerate(filter(lambda x: x, map(puzzle_to_data, reader))):
+        for i, (vec, rating) in enumerate([puzzle_to_data(i) for i in reader if i]):
             puzzles_file[i] = vec
             ratings_file[i] = rating
 
+
     # save mmap
     del puzzles_file, ratings_file
+
 
 def get_mmap_files(num_puzzles):
     puzzle_shape = (num_puzzles, 17 * (2 * MAX_LEN + 2), 8, 8)
@@ -56,9 +65,9 @@ def get_mmap_files(num_puzzles):
 def puzzle_to_data(puzzle):
     _, fen, moves, rating, rating_deviation, _, plays, tags, _ = puzzle
 
-    # skip super long puzzles :)
+    # we don't like super long puzzles :)
     if (moves.count(" ") - 1) / 2 > MAX_LEN:
-        return None
+        raise Exception("Puzzle too long")
 
     # get puzzle start board vector
     board = Board(fen)

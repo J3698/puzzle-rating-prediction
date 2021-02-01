@@ -19,7 +19,7 @@ def main():
 
 
 def histogramRatings(data):
-    data.hist(column = "Rating", bins = 30)
+    data.hist(column = "Rating", bins = 50)
     plt.show()
 
 def scatterPlaysAndDeviationSmallPlays(data):
